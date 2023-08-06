@@ -27,6 +27,7 @@ finish-args:
   - '--talk-name=org.kde.StatusNotifierWatcher'
   - '--env=LC_NUMERIC=C'
   - '--env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons'
+
 cleanup:
   - '*.la'
   - '*.a'
@@ -314,8 +315,6 @@ modules:
       - --enable-libx265
       - --enable-libwebp
     post-install:
-      - install -d /app/km
-      - install -d /app/km/app/
       - install -d /app/km/app/bin      
       - mv /app/bin/ffmpeg /app/km/app/bin/ffmpeg
     sources:
@@ -432,8 +431,6 @@ modules:
       - /include
       - /lib/pkgconfig
     post-install:
-      - install -d /app/km
-      - install -d /app/km/app/
       - install -d /app/km/app/bin            
       - mv /app/bin/mpv /app/km/app/bin/mpv
     sources:
@@ -764,9 +761,38 @@ modules:
           type: git
           tag-pattern: ^v([\d.]+)$
 
+  - name: patch 
+    buildsystem: simple
+    build-options:
+      no-debuginfo: true
+    build-commands:
+      - ./bootstrap
+      - ./configure
+      - make
+      - install -d /app/km/app/bin            
+      - mv src/patch /app/km/app/bin/patch
+    sources:
+      - type: git
+        url: https://git.savannah.gnu.org/git/patch.git
+        commit: 40b387de08653a1e46872b8ac1a6a14b9b94feb3
+        tag: v2.7.6
 
-
-
+  - name: postgres
+    buildsystem: simple
+    build-options: 
+      no-debuginfo: true
+    build-commands:
+      - ./configure --prefix=/app/km/app/bin/postgres
+      - make 
+      - make install      
+      - cd contrib ; make ; make install
+      - ls /app/km/app/bin/postgres/share/extension/
+      - rm -Rf /app/km/app/bin/postgres/include      
+    sources:
+      - type: git
+        url: https://git.postgresql.org/git/postgresql.git
+        commit: b664e3552b800b480e2b4fadd847f8b312e00642
+        tag: REL_13_9
 
   - name: karaokemugen
     buildsystem: simple
@@ -792,7 +818,6 @@ modules:
         --dir -c.compression=store -c.mac.identity=null
         $ELECTRON_BUILDER_ARCH_ARGS
       - cp -r packages/linux*unpacked/* /app/km/
-      - install -d /app/km/app/
       - install -d /app/km/app/bin
       - install -Dm755 stub_sandbox /app/km/chrome-sandbox
       - install -Dm755 km-wrapper /app/bin/km-wrapper
@@ -829,36 +854,3 @@ modules:
           https://downloads.sentry-cdn.com/sentry-cli/2.19.4/sentry-cli-Linux-x86_64
         sha256: a9fb79e44c5bae6ca8dfd2c66ac918c7e0405e3456edeb100d698961842f057f
         only-arches: '[x86_64]'
-  - name: patch 
-    buildsystem: simple
-    build-options:
-      no-debuginfo: true
-    build-commands:
-      - ./bootstrap
-      - ./configure
-      - make
-      - install -d /app/km
-      - install -d /app/km/app/
-      - install -d /app/km/app/bin            
-      - mv src/patch /app/km/app/bin/patch
-    sources:
-      - type: git
-        url: https://git.savannah.gnu.org/git/patch.git
-        commit: 40b387de08653a1e46872b8ac1a6a14b9b94feb3
-        tag: v2.7.6
-  - name: postgres
-    buildsystem: simple
-    build-options: 
-      no-debuginfo: true
-    build-commands:
-      - ./configure --prefix=/app/km/app/bin/postgres
-      - make 
-      - make install      
-      - cd contrib ; make ; make install
-      - ls /app/km/app/bin/postgres/share/extension/
-      - rm -Rf /app/km/app/bin/postgres/include      
-    sources:
-      - type: git
-        url: https://git.postgresql.org/git/postgresql.git
-        commit: b664e3552b800b480e2b4fadd847f8b312e00642
-        tag: REL_13_9
